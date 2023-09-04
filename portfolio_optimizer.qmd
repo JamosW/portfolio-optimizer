@@ -1,0 +1,200 @@
+---
+title: "Untitled"
+format: html
+---
+
+```{python}
+
+import numpy as np
+import pandas as pd
+import yahooquery as yq
+from itertools import combinations
+import matplotlib.pyplot as plt
+
+yq.Ticker().history()
+#source - Kolari and Pynnonen
+#returns simulated
+#r1 = [7, 13, 8, 16, 17]
+#r2 = [7, 8, 5, 3, 10]
+r1 = [1.1, 1.7, 2.1, 1.4, 0.2]
+r2 = [3, 4.2, 4.9, 4.1, 2.5]
+#get the means
+mean_r1, mean_r2 = [sum(i)/len(i) for i in [r1, r2]]
+
+#divide each value in realized returns from the mean method #1 to get variance
+var_r1, var_r2 = map(lambda x,y: sum([(x - i)**2 for i in y])/(len(y) - 1), [mean_r1, mean_r2], [r1, r2])
+
+#method2 uses more numpy but is slower
+var_r1, var_r2 = [np.sum(np.square(x- y))/(len(y) - 1) for x,y in zip([mean_r1, mean_r2], [r1, r2])]
+
+#get the standard deviation value
+std_r1, std_r2 = [np.sqrt(i) for i in [var_r1, var_r2]]
+
+#first weight column, convert to numpy for vectorized operations
+weight1 = np.array([i / 10 for i in range(0,11,1)])
+
+#second weight column
+weight2 = np.array(list(reversed(weight1)))
+
+#errors calculated by subtracticting each value from mean
+errors_r1, errors_r2 = list(map(lambda x,y: [i-x for i in y], [mean_r1, mean_r2], [r1, r2]))
+
+#product of errors
+error_prod = [x*y for x,y in zip(errors_r1, errors_r2)]
+
+#sum of square errors, used in the variance forumula
+sserrors_r1, sserrors_r2 = list(map(lambda errors: sum([error**2 for error in errors]), [errors_r1, errors_r2]))
+
+#covariance or r1 and r2, the sum of the product of the errors divided by n-1
+cov = (sum(error_prod)/4)
+
+#correlation of r1 and r2
+corr = sum(error_prod)/np.sqrt(sserrors_r1 * sserrors_r2)
+#or more simply
+corr = cov/(std_r1 * std_r2)
+
+#portfolio weighted returns
+rp = np.add(*[x*y for x,y in zip([weight1, weight2], [mean_r1, mean_r2])])
+
+#df structure, will change to an array
+mydf = pd.DataFrame({"w1": weight1, "w2": weight2,
+                     "R1": mean_r1, "R2" : mean_r2,
+                     "Rp": rp,
+                     "stdR1": std_r1, "stdR2": std_r2,
+                     "cov": cov})
+
+mydf
+
+#minimum variance portfolio (to do)
+w1 = (std_r2**2 - cov) / (std_r1**2  + std_r2**2 - (2 * cov))
+
+#general portfolio variance formula
+my_var = (weight1**2 * std_r1**2) + (weight2**2 * std_r2**2) + (2 * weight1 * weight2 * cov)
+
+#creating a general plot, using portfolio standard deviation std and return lists
+dat = pd.DataFrame({"std": np.sqrt(stds), "rets" : rp})
+
+#three stock portfolio
+#get the variance and weight of each and then add the combinations
+#best to grab from a list
+
+    
+#get the data
+df2 = yq.Ticker([ "TSLA", "IBM", "MMM", "META"], asynchronous = True).history(interval="1mo", start = "2014-01-01", end = "2021-01-07")
+
+def stock_returns() -> [pd.Series]:
+    df_list = []
+    for df in [df2.loc[[i]] for i in np.unique(df2.index.get_level_values(0))]:
+        close = np.array(df.close)
+        #get returns in percentage
+        ret = (np.diff(close) / close[:-1]) * 100
+        df_list.append(ret)
+    return df_list
+
+    #perhaps use the compound annual growth rate?
+
+df = stock_returns()
+
+def get_params(rets):
+    means = [i.mean() for i in rets]
+    errors_list = [(ret - mean) for mean,ret in zip(means, rets)]
+    squared_errors = [errors**2 for errors in errors_list]
+    variances = [sum(sq_error)/len(sq_error) for mean,sq_error in zip(means, squared_errors)]
+    #might not need this
+    standard_dev = np.sqrt(variances)
+
+    return {"variances": variances, "std_dev": standard_dev, "mean": means, 
+    "sq_errors": squared_errors, "errors" : errors_list}
+
+params = get_params(df)
+
+#write to csv   
+#for index, names in pkl_index_value:
+    #filter_combo_write_pkl(index, names)
+
+
+
+def portfolios(limit, params):
+    randos = np.random.rand(15000, limit)
+    #normalized
+    randos = ((randos.T/np.sum(randos, axis = 1)).T )
+    param = [param[:limit] for param in params.values()]
+    means = param[2]
+    #sum of squared errors
+    sserror = [sum(i) for i in param[3]]
+    #weights
+    weights = randos
+    #variance
+    var = np.array(param[0])
+    std = np.sqrt(var)
+
+    #covariance matrix
+    covar = np.cov(df, ddof = 0)
+
+    #covariance unique
+    cov = np.unique(covar[np.where(~np.eye(covar.shape[0], dtype = bool))])
+
+    a = list(map(lambda x: list(combinations(x, 2)), randos))
+
+    connects = [[i, cov] for i in a]
+
+    def calc_weights_cov(lst):
+        weights,cov = lst
+    
+        weight_prod = np.prod(weights, axis = 1) 
+        val = 2 * weight_prod * cov
+    
+        return val
+
+    p2 = np.sum(list(map(calc_weights_cov , connects)), axis = 1)
+
+    #maybe a func replacement######################################
+
+    #expected return
+    e_r = np.sum(weights * means, axis = 1)
+    
+    #portfolio variance, may not be correct
+    pv = np.sum(weights**2 * var, axis = 1) + p2 
+    #* (cor * np.prod(std)))
+
+    #pv = np.sum(weights**2 * var, axis = 1) + 2 * [list(combinations(i, r = 2)) for i in randos]
+    p_stdv = np.sqrt(pv)
+
+    #modified sharpe ratio
+    s_r = e_r / p_stdv
+    return e_r, p_stdv, s_r, randos
+
+e_r, p_stdv, s_r, rands = portfolios(4, params)
+
+#maximized sharpe_ratio
+rands[np.where(s_r == np.max(s_r))]
+    
+#plot
+x = p_stdv
+y = e_r
+
+# plot
+fig, ax = plt.subplots()
+
+ax.scatter(x, y, s = 1)
+
+ax.set(xticks=np.arange(min(p_stdv), max(p_stdv)),
+       yticks=np.arange(min(e_r), max(e_r)))
+
+plt.show()
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+```
