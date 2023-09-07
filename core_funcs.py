@@ -4,9 +4,7 @@ from itertools import combinations
 import matplotlib.pyplot as plt
 from yahooquery import Ticker
 
-
-
-
+#make sure all stocks have the same dates
 def min_date_dfs(symbols, start, end):
     
     dfs = Ticker(symbols= symbols, asynchronous = True).history(interval="1mo", start = start, end = end)
@@ -100,12 +98,12 @@ def portfolios(limit, params, df, samples):
 
     #right side of portfolio variance forumula
     p2 = np.sum(list(map(calc_weights_cov , connects)), axis = 1)
-
+    
     #expected return
     e_r = np.sum(weights * means, axis = 1)
     
     #portfolio variance
-    pv = np.sum(weights**2 * var, axis = 1) + p2 
+    pv = np.sum(weights**2 * var, axis = 1) + p2
     #* (cor * np.prod(std)))
 
     #pv = np.sum(weights**2 * var, axis = 1) + 2 * [list(combinations(i, r = 2)) for i in randos]
@@ -127,12 +125,12 @@ def portfolios(limit, params, df, samples):
     #max sharpe ratio weights and min variance weight
     sharpe_weights, min_variance_weights = [weights[i] for i in [optimals, min_variance_ind]]
     
-    return p_stdv, e_r, s_r, sharpe_weights, min_variance_weights, min_variance
+    return p_stdv, e_r, s_r, sharpe_weights, min_variance_weights, min_variance 
 
 
 def get_tickers():
     
-    return(['A','AAL','AAP','AAPL','ABBV','ABC','ABT','ACA','ACGL','ACN','ADBE','ADI'
+    return(['A','AAL','AAP','AAPL','ABBV','ABT','ACA','ACGL','ACN','ADBE','ADI'
 ,'ADM','ADP','ADSK','ADTN','AEE','AEP','AES','AFL','AGOAF','AGS','AHT'
 ,'AIG','AIR','AIZ','AJG','AKAM','ALB','ALC','ALGN','ALK','ALL','ALLE'
 ,'ALRS','ALV','AMAT','AMCR','AMD','AME','AMGN','AMP','AMS','AMT','AMZN'
