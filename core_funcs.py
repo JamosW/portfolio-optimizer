@@ -130,7 +130,7 @@ def portfolios(limit, params, df, samples):
 
 def get_tickers():
     
-    return(['A','AAL','AAP','AAPL','ABBV','ABT','ACA','ACGL','ACN','ADBE','ADI'
+    return(['A','AAL','AAP','AAPL','ABBV', 'ABT','ACA','ACGL','ACN','ADBE','ADI'
 ,'ADM','ADP','ADSK','ADTN','AEE','AEP','AES','AFL','AGOAF','AGS','AHT'
 ,'AIG','AIR','AIZ','AJG','AKAM','ALB','ALC','ALGN','ALK','ALL','ALLE'
 ,'ALRS','ALV','AMAT','AMCR','AMD','AME','AMGN','AMP','AMS','AMT','AMZN'

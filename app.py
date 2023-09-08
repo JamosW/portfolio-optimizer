@@ -6,7 +6,8 @@ from shinyswatch import theme
 from re import sub, split
 from htmltools import css
 
-today = date.today()
+#make sure the date exists
+today = date.today() - timedelta(days=2)
     
 def card(title, values, ispercent):
     
@@ -14,11 +15,10 @@ def card(title, values, ispercent):
     percentages = [str(np.round((np.float16(i) * 100), 2)) + "%" for i in split(' ', cleaned_lists) if i != '']
     non_percent = sub(r'[\[\]]', '', str(values))
     
-    toDisplay = []
     if(ispercent):
-        toDisplay.append(percentages)
+        toDisplay = percentages
     else:
-        toDisplay.append(non_percent)
+        toDisplay = non_percent
     
     return(
         x.ui.card(
@@ -46,7 +46,7 @@ app_ui = ui.page_fluid(
             ),
             ui.column(
                 4,
-                ui.input_text("tickers", "Choose Ticker", placeholder= "AAPL")
+                ui.input_selectize("tickers", "Choose Ticker", choices = get_tickers(), multiple=True)
                 
             ),
             ),
