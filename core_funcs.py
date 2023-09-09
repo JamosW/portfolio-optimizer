@@ -75,15 +75,15 @@ def portfolios_plot(portfolio_stdv, expected_ret):
     
 def portfolios(limit, params, df, samples):
     
-    param = [param[:limit] for param in params.values()]
+    #param = [param[:limit] for param in params.values()]
     
-    means = param[2]
+    means = params["mean"]
    
     #weights
     weights = random_weights(samples, limit)
     
     #variance
-    var = np.array(param[0])
+    var = np.array(params["variances"])
 
     #covariance matrix
     covar = np.cov(df, ddof = 0)
