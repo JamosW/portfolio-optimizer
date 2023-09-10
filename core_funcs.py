@@ -74,9 +74,7 @@ def portfolios_plot(portfolio_stdv, expected_ret):
     
     
 def portfolios(limit, params, df, samples):
-    
-    #param = [param[:limit] for param in params.values()]
-    
+
     means = params["mean"]
    
     #weights
