@@ -1,7 +1,7 @@
 from shiny import App, Inputs, Outputs, Session, render, ui, reactive
 import shiny.experimental as x
 from datetime import date, timedelta
-from core_funcs import np, min_date_dfs, stock_returns, get_params, portfolios, portfolios_plot, get_tickers
+from core_funcs import np, min_date_dfs, stock_returns, get_params, portfolios, portfolios_plot, get_tickers,random_weights
 from shinyswatch import theme
 from re import sub, split
 from htmltools import css
@@ -29,7 +29,6 @@ def card(title, values, ispercent):
             height = '130px'
         )
     )
-    
 
 app_ui = ui.page_fluid(
     theme.cosmo(),
@@ -41,12 +40,12 @@ app_ui = ui.page_fluid(
                 ui.column(
                 4, 
                 #70 days, slightly bigger than 2 months, the minimum needed for there to be any variance (as were using average monthly returns)
-                ui.input_date(id = "start", label = "Start", max = today - timedelta(days=96), value = today - timedelta(days=96), width = "130px"),
+                ui.input_date(id = "start", label = "Start", max = today - timedelta(days=96), value = today - timedelta(days = 365), width = "130px"),
                 ui.input_date(id = "end", label = "End", max = today, value = today, min = today, width = "130px")
             ),
             ui.column(
                 4,
-                ui.input_selectize("tickers", "Choose Ticker", choices = get_tickers(), multiple=True)
+                ui.input_selectize("tickers", "Choose Tickers", choices = get_tickers(), multiple=True)
                 
             ),
             ),
@@ -62,8 +61,11 @@ app_ui = ui.page_fluid(
 )
 
 def server(input: Inputs, output: Outputs, session: Session):
+    
+        def weights():        
+            return random_weights(input.samples(), len(input.tickers()))
         
-        #validation method, if all checks, we return an event, else return a modal message
+       #validation method, if all checks, we return an event, else return a modal message
         @reactive.Calc
         @reactive.event(input.calculate)
         def validate():
@@ -101,7 +103,7 @@ def server(input: Inputs, output: Outputs, session: Session):
         def portfolio_vis_data():
             df = stock_returns(main_df())
             params = get_params(df)
-            all_portfolios = portfolios(len(input.tickers()), params, df, input.samples())
+            all_portfolios = portfolios(params, df, weights=weights())
             
             return all_portfolios
         
@@ -126,7 +128,7 @@ def server(input: Inputs, output: Outputs, session: Session):
         @render.plot
         @reactive.event(validate)
         def plot():
-            return portfolios_plot(*portfolio_vis_data()[0:2])
+            return portfolios_plot(*portfolio_vis_data()[0:2], weights = random_weights(input.samples(), len(input.tickers())), names = np.sort(input.tickers()))
         
         
         @output
@@ -134,7 +136,7 @@ def server(input: Inputs, output: Outputs, session: Session):
         @reactive.event(validate)
         def txter():
             lower_bound, dfs = min_date_dfs(symbols = input.tickers(), start = input.start(), end = input.end())
-            
+           
             #conditional message if start date is lower than the lower bound
             if input.start() < lower_bound - timedelta(days = 30):
                 return f"Lowest date all {len(input.tickers())} tickers share in common is {lower_bound}"

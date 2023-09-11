@@ -4,6 +4,13 @@ from itertools import combinations
 import matplotlib.pyplot as plt
 from yahooquery import Ticker
 
+#switch plotting back end
+plt.switch_backend('agg')
+RED = "#cc0000"
+BLUE = "#0f4d92"
+LARGE = 8
+SMALL = 2
+
 #make sure all stocks have the same dates
 def min_date_dfs(symbols, start, end):
     
@@ -36,6 +43,13 @@ def get_params(rets):
 
     return {"variances": variances, "std_dev": standard_dev, "mean": means, 
     "sq_errors": squared_errors, "errors" : errors_list}
+    
+#get ticker_weights
+def ticker_weights(limit):
+    seq_stocks = range(limit)
+    markers = [[1 if a == i else 0 for a in seq_stocks] for i in seq_stocks]   
+    
+    return markers
 
 #calculate some random weights
 def random_weights(samples, limit):
@@ -43,7 +57,10 @@ def random_weights(samples, limit):
     #normalized
     randos = ((randos.T/np.sum(randos, axis = 1)).T)
     
-    return randos
+    #random weights plus ticker weights
+    weights = np.row_stack((randos, ticker_weights(limit)))
+    
+    return weights
 
 def calc_weights_cov(lst):
         weights,cov = lst
@@ -54,31 +71,45 @@ def calc_weights_cov(lst):
         return val
 
 #main plot
-def portfolios_plot(portfolio_stdv, expected_ret):
-    #switch plotting back end
-    plt.switch_backend('agg')
+
+def portfolios_plot(portfolio_stdv, expected_ret, weights, names):
     
-    #plot
-    x = portfolio_stdv
-    y = expected_ret
+    x_vars = portfolio_stdv
+    y_vars = expected_ret
+
+    #return a list of values used for plotting
+    def markers(left, right, array):
+        lst = [left if 1 in i else right for i in array]
+        return lst
 
     # plot
     fig, ax = plt.subplots()
-
-    ax.scatter(x, y, s = 1)
-
+    colors = markers(RED, BLUE, weights)
+    sizes =  markers(LARGE, SMALL, weights)
+    
+    #[plt.text(x,y,"hey", size = 10, color = RED) for x,y,w in zip(x_vars,y_vars, weights) if 1 in w]
+    
+    #index value to subset the names that are zipped with our vals
+    index = 0
+    for x,y,w in zip(x_vars,y_vars, weights):
+       if 1 in w:
+            vals = {"x":x,"y":y, "s":names[index]}
+            plt.text(**vals, size = 12, color = RED, weight = "bold", va = "top") 
+            index += 1
+    
+    plt.title("Portfolios")
+    ax.scatter(x_vars, y_vars, s = sizes, c = colors, alpha = 0.5)
     ax.set(xticks=np.arange(min(portfolio_stdv), max(portfolio_stdv)),
        yticks=np.arange(min(expected_ret), max(expected_ret)))
 
     return fig
     
     
-def portfolios(limit, params, df, samples):
-
+def portfolios(params, df, weights):
+    
+    #param = [param[:limit] for param in params.values()]
+    
     means = params["mean"]
-   
-    #weights
-    weights = random_weights(samples, limit)
     
     #variance
     var = np.array(params["variances"])
@@ -136,7 +167,7 @@ def get_tickers():
 ,'ARGX','ASM','ASML','ATO','ATVI','AVB','AVGO','AVY','AWK','AXP','AZN'
 ,'AZO','BA','BAC','BAX','BB','BBVA','BBWI','BBY','BDX','BEN','BF-B','BIDU'
 ,'BIIB','BIO','BK','BKNG','BKR','BKT','BLK','BME','BMY','BN','BOIVF'
-,'BOSS','BR','BRK-B','BRO','BSL','BSX','BWA','BXP','C','CAG','CAH','CARM'
+,'BOSS','BR','BRK-B','BRO','BSL','BSX','BTG','BWA','BXP','C','CAG','CAH','CARM'
 ,'CAT','CB','CBOE','CBRE','CCI','CCL','CDAY','CDNS','CDW','CE','CF','CFG'
 ,'CFR','CGGYY','CGUSY','CHD','CHRW','CHTR','CI','CINF','CL','CLX','CMA'
 ,'CMCSA','CME','CMG','CMI','CMS','CNA','CNC','CNP','COF','COO','COP'
