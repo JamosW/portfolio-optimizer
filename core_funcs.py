@@ -3,6 +3,7 @@ import numpy as np
 from itertools import combinations
 import matplotlib.pyplot as plt
 from yahooquery import Ticker
+from datetime import date, timedelta, datetime
 
 #switch plotting back end
 plt.switch_backend('agg')
@@ -15,10 +16,15 @@ SMALL = 2
 def min_date_dfs(symbols, start, end):
     
     dfs = Ticker(symbols= symbols, asynchronous = True).history(interval="1mo", start = start, end = end)
-        
-    lower_bound = max([i for i in dfs.reset_index().groupby("symbol")["date"].min()])
+    dfs_index  = dfs.index.get_level_values(1)
     
-    filtered_dfs = dfs[dfs.index.get_level_values(1) >= lower_bound]
+    #get rid of the datetime row
+    only_dates_dfs = dfs[[not isinstance(i, datetime) for i in dfs_index]]
+    only_dates_dfs_index = only_dates_dfs.index.get_level_values(1)
+    
+    #get the lowest date where all stocks reach to
+    lower_bound = max([i for i in only_dates_dfs.reset_index().groupby("symbol")["date"].min()])
+    filtered_dfs = only_dates_dfs[only_dates_dfs_index >= lower_bound]
     
     return lower_bound, filtered_dfs
     
@@ -160,7 +166,7 @@ def portfolios(params, df, weights):
 def get_tickers():
     
     return(['A','AAL','AAP','AAPL','ABBV', 'ABT','ACA','ACGL','ACN','ADBE','ADI'
-,'ADM','ADP','ADSK','ADTN','AEE','AEP','AES','AFL','AGOAF','AGS','AHT'
+,'ADM','ADP','ADSK','ADTN','AEE','AEP','AES','AFL','AGS','AHT'
 ,'AIG','AIR','AIZ','AJG','AKAM','ALB','ALC','ALGN','ALK','ALL','ALLE'
 ,'ALRS','ALV','AMAT','AMCR','AMD','AME','AMGN','AMP','AMS','AMT','AMZN'
 ,'ANET','ANSS','AOF','AON','AOS','APA','APAM','APD','APH','APTV','ARE'

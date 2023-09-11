@@ -1,7 +1,6 @@
 from shiny import App, Inputs, Outputs, Session, render, ui, reactive
 import shiny.experimental as x
-from datetime import date, timedelta
-from core_funcs import np, min_date_dfs, stock_returns, get_params, portfolios, portfolios_plot, get_tickers,random_weights
+from core_funcs import np, datetime, timedelta, date, min_date_dfs, stock_returns, get_params, portfolios, portfolios_plot, get_tickers,random_weights
 from shinyswatch import theme
 from re import sub, split
 from htmltools import css
@@ -144,5 +143,3 @@ def server(input: Inputs, output: Outputs, session: Session):
                 return None
 
 app = App(app_ui, server)
-
-#document plt change
