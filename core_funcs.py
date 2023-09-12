@@ -19,7 +19,7 @@ def min_date_dfs(symbols, start, end):
     dfs_index  = dfs.index.get_level_values(1)
     
     #get rid of the datetime row
-    only_dates_dfs = dfs[[not isinstance(i, datetime) for i in dfs_index]]
+    only_dates_dfs = dfs[[isinstance(i, date) for i in dfs_index]]
     only_dates_dfs_index = only_dates_dfs.index.get_level_values(1)
     
     #get the lowest date where all stocks reach to
@@ -82,6 +82,8 @@ def portfolios_plot(portfolio_stdv, expected_ret, weights, names):
     
     x_vars = portfolio_stdv
     y_vars = expected_ret
+    
+    [min_x,max_x], [min_y,max_y] = [[min(i) , max(i)] for i in (x_vars, y_vars)]
 
     #return a list of values used for plotting
     def markers(left, right, array):
@@ -104,9 +106,12 @@ def portfolios_plot(portfolio_stdv, expected_ret, weights, names):
             index += 1
     
     plt.title("Portfolios")
+    plt.xlabel("Standard Deviation (%)")
+    plt.ylabel("Expected Return (%)")
+    plt.xticks(np.arange(min_x, max_x, (max_x - min_x)/8))
+    plt.yticks(np.arange(min_y, max_y, (max_y - min_y)/8))
     ax.scatter(x_vars, y_vars, s = sizes, c = colors, alpha = 0.5)
-    ax.set(xticks=np.arange(min(portfolio_stdv), max(portfolio_stdv)),
-       yticks=np.arange(min(expected_ret), max(expected_ret)))
+    
 
     return fig
     
@@ -134,14 +139,13 @@ def portfolios(params, df, weights):
     #right side of portfolio variance forumula
     p2 = np.sum(list(map(calc_weights_cov , connects)), axis = 1)
     
-    #expected return
-    e_r = np.sum(weights * means, axis = 1)
+    #expected return, annualized
+    e_r = np.sum(weights * means, axis = 1) * 12
     
-    #portfolio variance
-    pv = np.sum(weights**2 * var, axis = 1) + p2
-    #* (cor * np.prod(std)))
+    #portfolio variance, annualized
+    pv = (np.sum(weights**2 * var, axis = 1) + p2) * 12
 
-    #pv = np.sum(weights**2 * var, axis = 1) + 2 * [list(combinations(i, r = 2)) for i in randos]
+    #standard deviation
     p_stdv = np.sqrt(pv)
 
     #modified sharpe ratios
