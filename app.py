@@ -6,7 +6,7 @@ from re import sub, split
 from htmltools import css
 
 #make sure the date exists
-today = date.today() - timedelta(days=2)
+today = date.today() - timedelta(days=3)
     
 def card(title, values, ispercent):
     
